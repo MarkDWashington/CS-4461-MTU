@@ -4,22 +4,46 @@ import bankserver
 
 
 class TestBankServer(unittest.TestCase):
-    def testTransactionParseSequenceNum(self):
-        t = bankserver.Transaction("000000001BAL00512300000000123")
-        self.assertEqual(t.sequenceNum, 1)
+    def test_Transaction_ParseSequenceNum(self):
+        t = bankserver.Transaction("000000001DEP00512300000012301")
+        self.assertEqual(t._sequenceNum, 1)
 
-    def testTransactionParseType(self):
-        t = bankserver.Transaction("000000001BAL00512300000000123")
-        self.assertEqual(t.type, "BAL")
+    def test_Transaction_ParseType(self):
+        t = bankserver.Transaction("000000001DEP00512300000012301")
+        self.assertEqual(t._type, "DEP")
 
-    def testTransactionParseDigits(self):
-        t = bankserver.Transaction("000000001BAL00512300000000123")
-        self.assertEqual(t.digits, 5)
+    def test_Transaction_ParseDigits(self):
+        t = bankserver.Transaction("000000001DEP00512300000012301")
+        self.assertEqual(t._digits, 5)
 
-    def testTransactionParseAmount(self):
-        t = bankserver.Transaction("000000001BAL00512300000000123")
-        self.assertEqual(t.amount, 123.00)
+    def test_Transaction_ParseAmount(self):
+        t = bankserver.Transaction("000000001DEP00512300000012301")
+        self.assertEqual(t._amount, 123.00)
 
-    def testTransactionParseChecksum(self):
-        t = bankserver.Transaction("000000001BAL00512300000012400")
-        self.assertEqual(t.checksum, 12400)
+    def test_Transaction_ParseChecksum(self):
+        t = bankserver.Transaction("000000001DEP005123000000012301")
+        self.assertEqual(t._checksum, 12301)
+
+    def test_Transaction_ParseBALSeqNum(self):
+        t = bankserver.Transaction("000000000BAL000000000000000")
+        self.assertEqual(t._sequenceNum, 0)
+    
+    def test_Transaction_ParseBALType(self):
+        t = bankserver.Transaction("000000000BAL000000000000000")
+        self.assertEqual(t._type, "BAL")
+    
+    def test_Transaction_ParseBALDigits(self):
+        t = bankserver.Transaction("000000000BAL000000000000000")
+        self.assertEqual(t._digits, 0)
+
+    def test_Transaction_ParseBALAmount(self):
+        t = bankserver.Transaction("000000000BAL000000000000000")
+        self.assertEqual(t._amount, 0)
+    
+    def test_Transaction_ParseBALChecksum(self):
+        t = bankserver.Transaction("000000000BAL000000000000000")
+        self.assertEqual(t._checksum, 0)
+
+    def test_Transaction_IncorrectBALSeqNum(self):
+        t = bankserver.Transaction("000000000BAL000000000000000")
+        self.assertRaises(bankserver.MalformedPacketException)
