@@ -3,6 +3,7 @@ import socket
 
 
 def main():
+    # Create socket
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind(("127.0.0.1", 9876))
 
@@ -12,21 +13,28 @@ def main():
     print("Server is ready and listening")
     while True:
         try:
+            # Receive data from client
             data, addr = s.recvfrom(32)
             data = data.decode("UTF-8")
             print(f"Received packet {data}")
 
+            # Decode packet into a transaction
             t = Transaction(data)
 
+            # Verify sequence number
             if t._sequenceNum <= lastSeqNum and t._type != "BAL":
                 print(f"Invalid sequence number {t._sequenceNum} (last was {lastSeqNum})")
                 continue
+            
+            # Verify edge case for BAL sequence number
             elif t._type == "BAL" and t._sequenceNum != 0:
                 print(f"Invalid sequence number (should be \"000000000\" for BAL requests")
                 continue
-
+            
+            # Store sequence number for later checking
             lastSeqNum = t._sequenceNum
 
+            # Handle each case
             if t._type == "BAL":
                 print(f"Balance: ${bal}")
                 amount = int(float(bal) * 100)
@@ -34,13 +42,11 @@ def main():
                 s.sendto(encodePacket(lastSeqNum, "BAL", digits, amount, lastSeqNum + amount).encode(), addr)
 
             elif t._type == "DEP":
-                print(
-                    f"Deposit request ${bal} + ${t._amount} -> ${bal + t._amount}")
+                print(f"Deposit request ${bal} + ${t._amount} -> ${bal + t._amount}")
                 bal += t._amount
 
             elif t._type == "WTH":
-                print(
-                    f"Withdrawal request ${bal} - ${t._amount} -> ${bal - t._amount}")
+                print(f"Withdrawal request ${bal} - ${t._amount} -> ${bal - t._amount}")
                 bal -= t._amount
 
         except MalformedPacketException as e:
@@ -55,6 +61,7 @@ def main():
     exit()
 
 def encodePacket(sequenceNum: Union[int, str], reqType: str, digits: Union[str, int], amount: Union[str, int], checksum: Union[str, int]) -> str:
+    '''Encode a packet'''
     sn: str = ""
     t: str = reqType
     d: str = ""
@@ -77,6 +84,7 @@ def encodePacket(sequenceNum: Union[int, str], reqType: str, digits: Union[str, 
     
 
 def decodePacket(raw: str):
+    '''Create a transaction from a request'''
     return Transaction(raw)
 
 class Transaction:
@@ -118,9 +126,11 @@ class Transaction:
                 raise MalformedPacketException("Checksum not long enough")
             self._checksum: int = int(self._rawChecksum)
 
+            # Verify BAL sequence number
             if self._type == "BAL" and self._rawSeqNum != "000000000":
                 raise MalformedPacketException("Sequence number should be \"000000000\" for BAL requests")
 
+            # Verify checksum
             if self._checksum != (tempAmount + self._sequenceNum):
                 raise BadChecksumException("Bad checksum")
 
@@ -131,11 +141,12 @@ class Transaction:
         
 
 class MalformedPacketException(Exception):
+    '''Raise when a request has some error in its structure'''
     def __init__(self, msg: str):
         super().__init__(msg)
 
-
 class BadChecksumException(Exception):
+    '''Raise when the checksum on a request could not be validated'''
     def __init__(self, msg: str):
         super().__init__(msg)
 
